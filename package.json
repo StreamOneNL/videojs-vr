@@ -54,6 +54,6 @@
     "videojs-errors": "1.0.4",
     "watchify": "3.7.0",
     "webvr-boilerplate": "git://github.com/arilaen/webvr-boilerplate.git",
-    "webvr-polyfill": "git://github.com/arilaen/webvr-polyfill.git"
+    "webvr-polyfill": "git://github.com/borismus/webvr-polyfill.git"
   }
 }
