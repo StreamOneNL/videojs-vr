@@ -27,7 +27,7 @@
   defaults = {
      projection: "Sphere"
   },
-
+  
   /**
   * Initializes the plugin
   */
@@ -40,14 +40,17 @@
          current_proj = settings.projection,
          movieMaterial,
          movieGeometry,
-         movieScreen,
-         controls3d,
-         scene;
+         movieScreen;
+
+         if(!player.vrSettings)
+         {
+            player.vrSettings = {};
+         }
 
      function changeProjection(projection) {
          var position = {x:0, y:0, z:0 };
-         if (scene) {
-             scene.remove(movieScreen);
+         if ( player.vrSettings.scene) {
+              player.vrSettings.scene.remove(movieScreen);
          }
          if (projection === "Sphere") {
              movieGeometry = new THREE.SphereBufferGeometry( 256, 32, 32 );
@@ -62,22 +65,19 @@
          movieScreen = new THREE.Mesh( movieGeometry, movieMaterial );
          movieScreen.position.set(position.x, position.y, position.z);
          movieScreen.scale.x = -1;
-         scene.add(movieScreen);
+          player.vrSettings.scene.add(movieScreen);
      }
 
      function initScene() {
          var time = Date.now(),
              effect,
              videoTexture,
-             requestId,
-             renderer,
-             camera,
              renderedCanvas;
 
-         camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
-         scene = new THREE.Scene();
+          player.vrSettings.camera = new THREE.PerspectiveCamera( 75, player.el().clientWidth / player.el().clientHeight, 1, 1000 );
+          player.vrSettings.scene = new THREE.Scene();
 
-         controls3d = new THREE.VRControls(camera);
+          player.vrSettings.controls = new THREE.VRControls( player.vrSettings.camera);
 
          videoTexture = new THREE.VideoTexture( videoEl );
          videoTexture.generateMipmaps = false;
@@ -87,21 +87,21 @@
 
          movieMaterial = new THREE.MeshBasicMaterial( { map: videoTexture, overdraw: true, side:THREE.DoubleSide } );
          changeProjection(current_proj);
-         camera.position.set(0,0,0);
+          player.vrSettings.camera.position.set(0,0,0);
 
-         renderer = new THREE.WebGLRenderer({
+          player.vrSettings.renderer = new THREE.WebGLRenderer({
              devicePixelRatio: window.devicePixelRatio,
              alpha: false,
              clearColor: 0xffffff,
              antialias: true
          });
 
-         renderer.setSize(window.innerWidth, window.innerHeight);
+          player.vrSettings.renderer.setSize(player.el().clientWidth, player.el().clientHeight);
 
-         effect = new THREE.VREffect(renderer);
-         effect.setSize(window.innerWidth, window.innerHeight);
+         effect = new THREE.VREffect( player.vrSettings.renderer);
+         effect.setSize(player.el().clientWidth, player.el().clientHeight);
 
-         var manager = new WebVRManager(renderer, effect, {hideButton: false});
+         var manager = new WebVRManager( player.vrSettings.renderer, effect, {hideButton: false});
 
          manager.setMode_ = function(mode) {
           var oldMode = this.mode;
@@ -118,7 +118,9 @@
           // this.emit('modechange', mode, oldMode);
         };
 
-         renderedCanvas = renderer.domElement;
+         renderedCanvas =  player.vrSettings.renderer.domElement;
+
+         player.vrCanvas = renderedCanvas;
 
          container.insertBefore(renderedCanvas, container.firstChild);
          videoEl.style.display = "none";
@@ -130,13 +132,13 @@
                  }
              }
 
-             controls3d.update();
-             requestId = window.requestAnimationFrame(animate)
-             manager.render( scene, camera );
+             player.vrSettings.controls.update();
+             player.vrSettings.animation_id = window.requestAnimationFrame(animate)
+             manager.render(player.vrSettings.scene, player.vrSettings.camera);
 
          }());
 
-         require('./ie11-webgl-patch')(renderer);
+         require('./ie11-webgl-patch')(player.vrSettings.renderer);
      }
      initScene();
 
